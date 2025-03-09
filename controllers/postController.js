@@ -17,6 +17,7 @@ function index(req, res) {
     });
 }
 
+
 //funzione show
 function show(req, res) {
     //res.send('Mostro un singolo elemento')
@@ -148,36 +149,20 @@ function modify(req, res) {
 
 //funzione destroy per eliminare un singolo post
 function destroy(req, res) {
-    //res.send(`Rimozione post con ID: ${req.params.id}`);
+    //recupero l'ID del post dalla richiesta e lo parso in numero
+    const id = parseInt(req.params.id);
 
-    //recupero l'id dal parametro della rotta e lo parso in numero
-    const postId = parseInt(req.params.id);
+    //query per eliminare il post dal db
+    const sqlDelete = "DELETE FROM posts WHERE id = ?";
 
-    //cerco il post da eliminare per indice
-    const post = posts.find(post => post.id === postId);
-
-    //bonus
-    //se il post non esiste
-    if (!post) {
-
-        //ritorno errore 404
-        res.status(404);
-
-        //e ritorno messaggio di errore
-        return res.json({
-            error: "Not found",
-            message: "Post non trovato"
-        });
-    }
-
-    //rimuovo dalla lista il post eliminato
-    posts.splice(posts.indexOf(post), 1);
-
-    //stampo in console la lista aggiornata senza il file eliminato
-    console.log("Lista aggiornata dei post:", posts);
-
-    //ritorno lo stato 204 per avviso eliminazione avvenuta
-    res.sendStatus(204);
+    //eseguo la query per eliminare il post
+    connection.query(sqlDelete, [id], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: "Errore nell'eliminazione del post" });
+        }
+        //restituisco lo stato 204 (No Content) per indicare successo
+        res.sendStatus(204)
+    });
 }
 
 
