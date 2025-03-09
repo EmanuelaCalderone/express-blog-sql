@@ -23,26 +23,31 @@ function show(req, res) {
     //res.send('Mostro un singolo elemento')
 
     //recupero l'id dal parametro della rotta e lo parso in numero
-    const postId = parseInt(req.params.id)
-    //cerco il post per id e con find restituisco il primo
-    const singlePost = posts.find(post => post.id === postId);
+    const id = parseInt(req.params.id)
 
-    //bonus
-    //se il post non esiste
-    if (!singlePost) {
+    //query per ottenere il post dal db
+    const sql = `
+        SELECT 
+            posts.*,
+            GROUP_CONCAT(tags.label SEPARATOR ', ') AS tags
+    FROM posts 
+    JOIN post_tag ON posts.id = post_tag.post_id
+    JOIN tags ON post_tag.tag_id = tags.id
+    WHERE posts.id = ?`;
 
-        //ritorno errore 404
-        res.status(404);
+    //eseguo la query per mostrare il singolo post
+    connection.query(sql, [id], (err, results) => {
+        if (err)
+            return res.status(500).json({ error: "Errore nel server" });
 
-        //ritorno messaggio di errore
-        return res.json({
-            error: "Not found",
-            message: "Post non trovato"
-        });
-    }
+        //se il post non esiste
+        if (results.length === 0) {
+            return res.status(404).json({ error: "Post non trovato" });
+        }
 
-    //altrimenti restituisco il post in json
-    res.json(singlePost);
+        //restituisco il post in formato JSON
+        res.json(results[0]);
+    });
 }
 
 //funzione store
@@ -153,10 +158,10 @@ function destroy(req, res) {
     const id = parseInt(req.params.id);
 
     //query per eliminare il post dal db
-    const sqlDelete = "DELETE FROM posts WHERE id = ?";
+    const sql = "DELETE FROM posts WHERE id = ?";
 
     //eseguo la query per eliminare il post
-    connection.query(sqlDelete, [id], (err, result) => {
+    connection.query(sql, [id], (err, result) => {
         if (err) {
             return res.status(500).json({ error: "Errore nell'eliminazione del post" });
         }
